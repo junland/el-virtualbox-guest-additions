@@ -13,7 +13,7 @@ Source2:        vboxclient.service
 Source3:        60-vboxguest.rules
 Source4:        mount.vboxsf
 
-BuildRequires:  p7zip-plugins
+BuildRequires:  7zip
 BuildRequires:  cpio
 BuildRequires:  make
 BuildRequires:  tar
