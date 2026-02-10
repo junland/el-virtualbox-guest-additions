@@ -13,7 +13,7 @@ Source2:        vboxclient.service
 Source3:        60-vboxguest.rules
 Source4:        mount.vboxsf
 
-BuildRequires:  bsdtar
+BuildRequires:  p7zip-plugins
 BuildRequires:  cpio
 BuildRequires:  make
 BuildRequires:  tar
@@ -37,9 +37,9 @@ This package installs the VirtualBox Guest Additions from the official
 VirtualBox ISO image for Enterprise Linux systems.
 
 %prep
-# Extract the ISO contents using bsdtar (no root privileges needed)
+# Extract the ISO contents using 7z (no root privileges needed)
 mkdir -p %{_builddir}/iso
-bsdtar xf %{SOURCE0} -C %{_builddir}/iso
+7z x -o%{_builddir}/iso %{SOURCE0}
 cp %{_builddir}/iso/VBoxLinuxAdditions.run %{_builddir}/
 chmod +x %{_builddir}/VBoxLinuxAdditions.run
 
