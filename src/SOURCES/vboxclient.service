@@ -1,0 +1,13 @@
+[Unit]
+Description=VirtualBox Guest DRM Client
+ConditionVirtualization=oracle
+After=display-manager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/VBoxDRMClient
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
