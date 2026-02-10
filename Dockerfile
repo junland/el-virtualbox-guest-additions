@@ -7,7 +7,7 @@ FROM ${REGISTRY}/${REGISTRY_NAMESPACE}/${EL_IMAGE}:${EL_VERSION} AS build
 
 # Enable CRB repository and install build dependencies
 RUN dnf upgrade -y && \
-    dnf install -y dnf-plugins-core rpm-build rpmdevtools tar gzip tree && \
+    dnf install -y dnf-plugins-core epel-release rpm-build rpmdevtools tar gzip tree && \
     dnf config-manager --set-enabled crb && \
     dnf update -y
 
