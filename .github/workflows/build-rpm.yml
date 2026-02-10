@@ -1,0 +1,101 @@
+name: Build RPM Package
+
+on:
+  push:
+    branches: [ main, dev, copilot/* ]
+  pull_request:
+    branches: [ main, dev, copilot/* ]
+  workflow_dispatch:
+  schedule:
+  # This workflow is triggered every day at 00:00 UTC
+    - cron: '0 0 */1 * *'
+
+jobs:
+  build-rpm:
+    name: Build RPM Package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        el_flavor: [rocky, alma]
+        el_version: [9, 10]
+        spec_file: [virtualbox-guest-additions.spec]
+        include:
+          - el_flavor: alma
+            el_image: almalinux
+            registry_namespace: almalinuxorg
+          - el_flavor: rocky
+            el_image: rockylinux
+            registry_namespace: rockylinux
+
+    env:
+      CONTAINER_RUN_NAME: rpm-builder-run-${{ matrix.el_flavor }}${{ matrix.el_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+      BUILD_CONTEXT_DIR: build-context
+      EL_IMAGE: ${{ matrix.el_image }}
+      REGISTRY_NAMESPACE: ${{ matrix.registry_namespace }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Create workspace directory
+      run: mkdir -vp ${{ env.BUILD_CONTEXT_DIR }}/{RPMS,SRPMS,SOURCES,SPECS,DEBUG_RPMS}
+
+    - name: Prepare build context
+      run: |
+        cp -vr src/*.spec "${{ env.BUILD_CONTEXT_DIR }}/SPECS/"
+        cp -vr src/SOURCES/* "${{ env.BUILD_CONTEXT_DIR }}/SOURCES/"
+        cp -v *.sh "${{ env.BUILD_CONTEXT_DIR }}"
+
+    - name: Build Docker image
+      run: |
+        docker build \
+               --build-arg EL_IMAGE=${{ env.EL_IMAGE }} \
+               --build-arg EL_VERSION=${{ matrix.el_version }} \
+               --build-arg REGISTRY_NAMESPACE=${{ env.REGISTRY_NAMESPACE }} \
+               -f Dockerfile \
+               -t rpm-builder:${{ matrix.el_flavor }}${{ matrix.el_version }} "${{ env.BUILD_CONTEXT_DIR }}"
+
+    - name: Run builder container
+      run: |
+        docker run -t --name "$CONTAINER_RUN_NAME" rpm-builder:${{ matrix.el_flavor }}${{ matrix.el_version }} ${{ matrix.spec_file }}
+        docker wait "$CONTAINER_RUN_NAME"
+
+    - name: Copy built SRPMS and RPM artifacts
+      run: |
+        docker cp "$CONTAINER_RUN_NAME":/home/builder/rpmbuild/RPMS/. "${{ env.BUILD_CONTEXT_DIR }}/RPMS/"
+        docker cp "$CONTAINER_RUN_NAME":/home/builder/rpmbuild/SRPMS/. "${{ env.BUILD_CONTEXT_DIR }}/SRPMS/"
+        docker rm "$CONTAINER_RUN_NAME"
+
+    - name: Flatten SRPMS and RPM directory structure
+      run: |
+        find "${{ env.BUILD_CONTEXT_DIR }}/SRPMS" -mindepth 2 -type f -name "*.rpm" -exec mv -v {} "${{ env.BUILD_CONTEXT_DIR }}/SRPMS/" \;
+        find "${{ env.BUILD_CONTEXT_DIR }}/SRPMS" -type d -empty -delete
+        find "${{ env.BUILD_CONTEXT_DIR }}/RPMS" -mindepth 2 -type f -name "*.rpm" -exec mv -v {} "${{ env.BUILD_CONTEXT_DIR }}/RPMS/" \;
+        find "${{ env.BUILD_CONTEXT_DIR }}/RPMS" -type d -empty -delete
+        find "${{ env.BUILD_CONTEXT_DIR }}/RPMS" -type f -name "*debuginfo*.rpm" -exec mv -v {} "${{ env.BUILD_CONTEXT_DIR }}/DEBUG_RPMS/" \;
+        
+
+    - name: List SRPMS and RPM artifacts
+      run: |
+        find "${{ env.BUILD_CONTEXT_DIR }}/SRPMS" "${{ env.BUILD_CONTEXT_DIR }}/RPMS" -name "*.rpm" -type f -exec ls -lhG {} \; | sort
+
+    - name: Upload RPM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: "${{ env.BUILD_CONTEXT_DIR }}/RPMS/*.rpm"
+        retention-days: 3
+
+    - name: Upload SRPM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: srpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: "${{ env.BUILD_CONTEXT_DIR }}/SRPMS/*.rpm"
+        retention-days: 3
+    
+    - name: Upload debuginfo RPM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: rpm-debuginfo-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: "${{ env.BUILD_CONTEXT_DIR }}/DEBUG_RPMS/*debuginfo*.rpm"
+        retention-days: 3
