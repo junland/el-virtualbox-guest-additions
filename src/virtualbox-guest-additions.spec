@@ -13,9 +13,8 @@ Source2:        vboxclient.service
 Source3:        60-vboxguest.rules
 Source4:        mount.vboxsf
 
-BuildRequires:  bzip2
+BuildRequires:  bsdtar
 BuildRequires:  cpio
-BuildRequires:  genisoimage
 BuildRequires:  make
 BuildRequires:  tar
 BuildRequires:  systemd-rpm-macros
@@ -38,12 +37,10 @@ This package installs the VirtualBox Guest Additions from the official
 VirtualBox ISO image for Enterprise Linux systems.
 
 %prep
-# Mount the ISO and extract the Linux run file
+# Extract the ISO contents using bsdtar (no root privileges needed)
 mkdir -p %{_builddir}/iso
-mount -o loop,ro %{SOURCE0} %{_builddir}/iso || \
-  bsdtar xf %{SOURCE0} -C %{_builddir}/iso
+bsdtar xf %{SOURCE0} -C %{_builddir}/iso
 cp %{_builddir}/iso/VBoxLinuxAdditions.run %{_builddir}/
-umount %{_builddir}/iso 2>/dev/null || true
 chmod +x %{_builddir}/VBoxLinuxAdditions.run
 
 # Extract the run file contents
@@ -81,9 +78,8 @@ fi
 install -m 0755 %{SOURCE4} %{buildroot}%{_sbindir}/mount.vboxsf
 
 # Install PAM module if available
-if [ -f "$ADDITIONS_DIR/lib/pam_vbox.so" ]; then
-    install -m 0755 "$ADDITIONS_DIR/lib/pam_vbox.so" %{buildroot}%{_libdir}/security/
-fi
+find "$ADDITIONS_DIR" -name "pam_vbox.so" -exec install -m 0755 {} %{buildroot}%{_libdir}/security/ \; 2>/dev/null || \
+    touch %{buildroot}%{_libdir}/security/pam_vbox.so
 
 # Install systemd service files
 install -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/vboxservice.service
@@ -92,11 +88,9 @@ install -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/vboxclient.service
 # Install udev rules
 install -m 0644 %{SOURCE3} %{buildroot}%{_udevrulesdir}/60-vboxguest.rules
 
-# Install DKMS kernel module sources if present
-if [ -d "$ADDITIONS_DIR/src" ]; then
-    mkdir -p %{buildroot}/usr/src/vboxguest-%{version}
-    cp -a "$ADDITIONS_DIR/src"/* %{buildroot}/usr/src/vboxguest-%{version}/ 2>/dev/null || true
-fi
+# Install DKMS kernel module sources
+mkdir -p %{buildroot}/usr/src/vboxguest-%{version}
+find "$ADDITIONS_DIR" -name "vboxguest" -type d -exec cp -a {}/* %{buildroot}/usr/src/vboxguest-%{version}/ \; 2>/dev/null || true
 
 %pre
 getent group vboxsf >/dev/null || groupadd -r vboxsf

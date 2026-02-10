@@ -1,6 +1,6 @@
 #!/bin/sh
-# Oracle VM VirtualBox
-# A wrapper for the mount.vboxsf tool that converts mount options
-# to a format understood by the VirtualBox shared folder file system.
+# VirtualBox shared folder mount helper
+# Called by mount(8) when mounting a vboxsf filesystem.
+# Usage: mount -t vboxsf <share_name> <mount_point> [-o <options>]
 
-exec /usr/sbin/mount.vboxsf.real "$@"
+exec /bin/mount -i -t vboxsf "$@"
