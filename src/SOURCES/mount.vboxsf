@@ -1,0 +1,6 @@
+#!/bin/sh
+# VirtualBox shared folder mount helper
+# Called by mount(8) when mounting a vboxsf filesystem.
+# Usage: mount -t vboxsf <share_name> <mount_point> [-o <options>]
+
+exec /bin/mount -i -t vboxsf "$@"

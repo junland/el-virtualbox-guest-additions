@@ -1,0 +1,13 @@
+[Unit]
+Description=VirtualBox Guest Service
+ConditionVirtualization=oracle
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/VBoxService --foreground
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
