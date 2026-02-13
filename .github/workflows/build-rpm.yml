@@ -10,6 +10,10 @@ on:
   # This workflow is triggered every day at 00:00 UTC
     - cron: '0 0 */1 * *'
 
+permissions:
+  actions: read
+  artifact-metadata: read
+
 jobs:
   build-rpm:
     name: Build RPM Package
@@ -41,18 +45,12 @@ jobs:
       run: mkdir -vp ${{ env.BUILD_CONTEXT_DIR }}/{RPMS,SRPMS,SOURCES,SPECS,DEBUG_RPMS,EXTRA_RPMS}
 
     - name: Download kBuild RPM packages from el-kbuild
-      uses: dawidd6/action-download-artifact@v9
+      uses: actions/download-artifact@v7
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        repo: junland/el-kbuild
-        workflow: build-rpm.yaml
-        branch: main
-        name: rpm-pkgs-${{ matrix.el_flavor }}10-.*
-        name_is_regexp: true
+        repository: junland/el-kbuild
+        name: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-*
         path: ${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS
-        search_artifacts: true
-        check_artifacts: true
-        if_no_artifact_found: fail
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Prepare build context
       run: |
