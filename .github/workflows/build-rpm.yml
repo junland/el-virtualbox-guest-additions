@@ -51,6 +51,7 @@ jobs:
         name: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-*
         path: ${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 21999427498
 
     - name: Prepare build context
       run: |
