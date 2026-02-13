@@ -43,7 +43,6 @@ jobs:
     - name: Download kBuild RPM packages from el-kbuild
       uses: actions/download-artifact@v7
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
         repository: junland/el-kbuild
         name: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-*
         path: ${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS
