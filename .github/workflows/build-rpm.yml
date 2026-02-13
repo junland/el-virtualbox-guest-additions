@@ -47,7 +47,7 @@ jobs:
         repo: junland/el-kbuild
         workflow: build-rpm.yaml
         branch: main
-        name: rpm-pkgs-${{ matrix.el_flavor }}10-*
+        name: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-*
         name_is_regexp: true
         path: ${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS
         search_artifacts: true
