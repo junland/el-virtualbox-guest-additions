@@ -38,13 +38,31 @@ jobs:
       uses: actions/checkout@v5
 
     - name: Create workspace directory
-      run: mkdir -vp ${{ env.BUILD_CONTEXT_DIR }}/{RPMS,SRPMS,SOURCES,SPECS,DEBUG_RPMS}
+      run: mkdir -vp ${{ env.BUILD_CONTEXT_DIR }}/{RPMS,SRPMS,SOURCES,SPECS,DEBUG_RPMS,EXTRA_RPMS}
+
+    - name: Download kBuild RPM packages from el-kbuild
+      uses: dawidd6/action-download-artifact@v9
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        repo: junland/el-kbuild
+        workflow: build-rpm.yaml
+        branch: main
+        name: rpm-pkgs-${{ matrix.el_flavor }}10-*
+        name_is_regexp: true
+        path: ${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS
+        search_artifacts: true
+        check_artifacts: true
+        if_no_artifact_found: fail
 
     - name: Prepare build context
       run: |
         cp -vr src/*.spec "${{ env.BUILD_CONTEXT_DIR }}/SPECS/"
         cp -vr src/SOURCES/* "${{ env.BUILD_CONTEXT_DIR }}/SOURCES/"
         cp -v *.sh "${{ env.BUILD_CONTEXT_DIR }}"
+        find "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS" -mindepth 2 -type f -name "*.rpm" -exec mv -v {} "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS/" \;
+        find "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS" -type d -empty -delete
+        echo "=== kBuild RPM packages ==="
+        ls -lhG "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS/"
 
     - name: Build Docker image
       run: |
