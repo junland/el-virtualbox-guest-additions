@@ -21,6 +21,11 @@ COPY --chown=builder:builder . /home/builder/
 # Make sure the build script is executable
 RUN chmod +x /home/builder/build-rpm.sh
 
+# Install extra RPM packages (e.g. kBuild) if present
+RUN if [ -d /home/builder/EXTRA_RPMS ] && ls /home/builder/EXTRA_RPMS/*.rpm 1>/dev/null 2>&1; then \
+        dnf install -y /home/builder/EXTRA_RPMS/*.rpm; \
+    fi
+
 # Get dependencies for all the spec files
 RUN dnf builddep -y /home/builder/SPECS/*.spec && \
     dnf clean all

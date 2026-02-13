@@ -10,6 +10,10 @@ on:
   # This workflow is triggered every day at 00:00 UTC
     - cron: '0 0 */1 * *'
 
+permissions:
+  actions: read
+  artifact-metadata: read
+
 jobs:
   build-rpm:
     name: Build RPM Package
@@ -35,16 +39,29 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Create workspace directory
-      run: mkdir -vp ${{ env.BUILD_CONTEXT_DIR }}/{RPMS,SRPMS,SOURCES,SPECS,DEBUG_RPMS}
+      run: mkdir -vp ${{ env.BUILD_CONTEXT_DIR }}/{RPMS,SRPMS,SOURCES,SPECS,DEBUG_RPMS,EXTRA_RPMS}
+
+    - name: Download kBuild RPM packages from el-kbuild
+      uses: actions/download-artifact@v7
+      with:
+        repository: junland/el-kbuild
+        pattern: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-*
+        path: ${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: 22000311966
 
     - name: Prepare build context
       run: |
         cp -vr src/*.spec "${{ env.BUILD_CONTEXT_DIR }}/SPECS/"
         cp -vr src/SOURCES/* "${{ env.BUILD_CONTEXT_DIR }}/SOURCES/"
         cp -v *.sh "${{ env.BUILD_CONTEXT_DIR }}"
+        find "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS" -mindepth 2 -type f -name "*.rpm" -exec mv -v {} "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS/" \;
+        find "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS" -type d -empty -delete
+        echo "=== kBuild RPM packages ==="
+        ls -lhG "${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS/"
 
     - name: Build Docker image
       run: |
