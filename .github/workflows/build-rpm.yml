@@ -48,7 +48,8 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         repository: junland/el-kbuild
-        name: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-*
+        name: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}
+        pattern: rpm-pkgs-${{ matrix.el_flavor }}${{ matrix.el_version }}-*
         path: ${{ env.BUILD_CONTEXT_DIR }}/EXTRA_RPMS
         github-token: ${{ secrets.GITHUB_TOKEN }}
         run-id: 22000311966
