@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         el_flavor: [rocky, alma]
-        el_version: [9, 10]
+        el_version: [10]
         spec_file: [virtualbox-guest-additions.spec]
         include:
           - el_flavor: alma
