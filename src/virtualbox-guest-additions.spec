@@ -44,7 +44,7 @@ cp %{_builddir}/iso/VBoxLinuxAdditions.run %{_builddir}/
 chmod +x %{_builddir}/VBoxLinuxAdditions.run
 
 # Extract the run file contents
-sh %{_builddir}/VBoxLinuxAdditions.run --noexec --keep --nox11 --target %{_builddir}/additions
+sh %{_builddir}/VBoxLinuxAdditions.run install --noexec --keep --nox11 --package-base %{_builddir}
 
 %build
 # Nothing to build; we repackage prebuilt binaries
