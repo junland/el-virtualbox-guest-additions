@@ -14,16 +14,17 @@ Source3:        60-vboxguest.rules
 Source4:        mount.vboxsf
 
 BuildRequires:  7zip
+BuildRequires:  bzip2
 BuildRequires:  cpio
+BuildRequires:  elfutils-libelf-devel
+BuildRequires:  gcc
+BuildRequires:  kernel-devel
+BuildRequires:  kernel-headers
 BuildRequires:  make
-BuildRequires:  tar
+BuildRequires:  perl
 BuildRequires:  systemd-rpm-macros
-
-Requires:       systemd
-Requires:       dkms
-Requires:       kernel-devel
-Requires:       gcc
-Requires:       make
+BuildRequires:  tar
+BuildRequires:  which
 
 # VirtualBox guests are x86 only
 ExclusiveArch:  x86_64
@@ -38,16 +39,18 @@ VirtualBox ISO image for Enterprise Linux systems.
 
 %prep
 # Extract the ISO contents using 7z (no root privileges needed)
-mkdir -p %{_builddir}/iso
+mkdir -p %{_builddir}/iso %{_builddir}/extracted %{_builddir}/built
 7z x -o%{_builddir}/iso %{SOURCE0}
-cp %{_builddir}/iso/VBoxLinuxAdditions.run %{_builddir}/
-chmod +x %{_builddir}/VBoxLinuxAdditions.run
+chmod +x %{_builddir}/iso/VBoxLinuxAdditions.run
 
-# Extract the run file contents
-sh %{_builddir}/VBoxLinuxAdditions.run install --noexec --keep --nox11 --package-base %{_builddir}
+# Extract the run file contents, but dont execute the embedded script
+sh %{_builddir}/iso/VBoxLinuxAdditions.run --noexec --keep --nox11 --target %{_builddir}/extracted
+
+# Comment out check_root function in the extracted script to disable root check
+sed -i 's/check_root/#check_root/g' %{_builddir}/extracted/install.sh
 
 %build
-# Nothing to build; we repackage prebuilt binaries
+sh %{_builddir}/extracted/install.sh package %{_builddir}
 
 %install
 # Create directory structure
