@@ -50,7 +50,8 @@ sh %{_builddir}/iso/VBoxLinuxAdditions.run --noexec --keep --nox11 --target %{_b
 sed -i 's/check_root/#check_root/g' %{_builddir}/extracted/install.sh
 
 %build
-sh %{_builddir}/extracted/install.sh package %{_builddir}
+# Go into the extracted directory and run the install script with "package" argument to prepare files for packaging
+cd %{_builddir}/extracted && sh %{_builddir}/extracted/install.sh package %{_builddir}
 
 %install
 # Create directory structure
